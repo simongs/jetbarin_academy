@@ -1,0 +1,184 @@
+type: edu
+custom_name: stage3
+files:
+- name: src/minesweeper/Main.java
+  visible: true
+  text: "package minesweeper;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\
+    import java.util.Objects;\nimport java.util.Random;\nimport java.util.Scanner;\n\
+    \npublic class Main {\n\tprivate final static int STAGE_SIZE = 9;\n\n    public\
+    \ static void main(String[] args) {\n        // write your code here\n\t\tScanner\
+    \ scanner = new Scanner(System.in);\n\t\tSystem.out.println(\"How many mines do\
+    \ you want on the field?\");\n\n\t\tint mineCount = scanner.nextInt();\n\n\t\t\
+    List<Mine> mineList = createRandomMineList(mineCount);\n\n\t\t//mineList.stream().forEach(System.out::println);\n\
+    \t\t\n\t\tchar[][] mineStage = createMineStage(mineList);\n\n\t\tfor (int i =\
+    \ 0; i < STAGE_SIZE; i++) {\n\t\t\tfor (int j = 0; j < STAGE_SIZE; j++) {\n\t\t\
+    \t\tSystem.out.print(mineStage[i][j]);\n\t\t\t}\n\t\t\tSystem.out.println(\"\"\
+    );\n\t\t}\n\n    }\n\n\tprivate static char[][] createMineStage(List<Mine> mineList)\
+    \ {\n    \tchar[][] mineStage = new char[STAGE_SIZE][STAGE_SIZE];\n\n\t\tfor (int\
+    \ i = 0; i < STAGE_SIZE; i++) {\n\t\t\tfor (int j = 0; j < STAGE_SIZE; j++) {\n\
+    \t\t\t\tint finalI = i;\n\t\t\t\tint finalJ = j;\n\t\t\t\tlong count = mineList.stream().filter(mine\
+    \ -> mine.check(finalI, finalJ)).count();\n\t\t\t\tif (count > 0) {\n\t\t\t\t\t\
+    mineStage[finalI][finalJ] = 'X';\n\t\t\t\t} else {\n\t\t\t\t\tmineStage[finalI][finalJ]\
+    \ = '.';\n\t\t\t\t}\n\n\t\t\t}\n\t\t}\n\n\t\treturn mineStage;\n\t}\n\n\tprivate\
+    \ static List<Mine> createRandomMineList(int mineCount) {\n    \tList<Mine> mineList\
+    \ = new ArrayList<>();\n\n    \tfor (int i = 0 ; i < mineCount ; i++) {\n\t\t\t\
+    mineList.add(notDuplicatedMine(mineList));\n\t\t}\n\n    \treturn mineList;\n\t\
+    }\n\n\tprivate static Mine notDuplicatedMine(List<Mine> mineList) {\n    \twhile\
+    \ (true) {\n\t\t\tfinal Mine randomMine = Mine.createNewRandomEntity();\n\n\t\t\
+    \tlong count = mineList.stream().filter(i -> i.equals(randomMine)).count();\n\t\
+    \t\tif (count > 0) {\n\t\t\t\t//System.out.println(\"중복값이 존재했습니다.\" + randomMine);\n\
+    \t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\treturn randomMine;\n\t\t}\n\t}\n\n\tstatic\
+    \ class Mine {\n\t\tprivate static final Random random = new Random();\n\n   \
+    \ \tint x;\n    \tint y;\n\n\t\tpublic Mine(int x, int y) {\n\t\t\tthis.x = x;\n\
+    \t\t\tthis.y = y;\n\t\t}\n\n\t\tpublic static Mine createNewRandomEntity() {\n\
+    \t\t\tint x = random.nextInt(STAGE_SIZE);\n\t\t\tint y = random.nextInt(STAGE_SIZE);\n\
+    \n\t\t\treturn new Mine(x, y);\n\t\t}\n\n\t\t@Override\n\t\tpublic boolean equals(Object\
+    \ o) {\n\t\t\tif (this == o) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tif (o ==\
+    \ null || getClass() != o.getClass()) {\n\t\t\t\treturn false;\n\t\t\t}\n\n\t\t\
+    \tMine mine = (Mine) o;\n\t\t\treturn x == mine.x && y == mine.y;\n\t\t}\n\n\t\
+    \t@Override\n\t\tpublic int hashCode() {\n\t\t\treturn Objects.hash(x, y);\n\t\
+    \t}\n\n\t\t@Override\n\t\tpublic String toString() {\n\t\t\treturn \"Mine{\" +\
+    \ \"x=\" + x + \", y=\" + y + '}';\n\t\t}\n\n\t\tpublic boolean check(int x, int\
+    \ y) {\n\t\t\treturn this.x == x && this.y == y;\n\t\t}\n\t}\n}\n"
+  learner_created: false
+- name: test/MinesweeperTest.java
+  visible: false
+  text: |
+    import minesweeper.Main;
+    import org.hyperskill.hstest.stage.StageTest;
+    import org.hyperskill.hstest.testcase.CheckResult;
+    import org.hyperskill.hstest.testcase.TestCase;
+    import org.hyperskill.hstest.testing.TestedProgram;
+
+    import java.util.*;
+    import java.util.stream.Collectors;
+
+    public class MinesweeperTest extends StageTest<Integer> {
+        @Override
+        public List<TestCase<Integer>> generate() {
+            List<TestCase<Integer>> tests = new ArrayList<>();
+            for (int i = 1; i <= 50; i++) {
+                int mines = i;
+                TestCase<Integer> test = new TestCase<Integer>()
+                    .setDynamicTesting(() -> {
+                        TestedProgram main = new TestedProgram(Main.class);
+                        main.start();
+                        String output = main.execute("" + mines);
+                        return test(output, mines);
+                    });
+                tests.add(test);
+                tests.add(test);
+            }
+            return tests;
+        }
+
+        public CheckResult test(String reply, Integer attach) {
+            List<String> lines =
+                Arrays.stream(reply.split("\n"))
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+
+            if (lines.isEmpty()) {
+                return CheckResult.wrong(
+                    "Looks like you didn't output a single line!"
+                );
+            }
+
+            if (lines.size() != 9) {
+                return CheckResult.wrong(
+                    "You should output exactly 9 lines of the field. Found: " + lines.size() + "."
+                );
+            }
+
+            int mines = 0;
+
+            for (String line : lines) {
+                if (line.length() != 9) {
+                    return CheckResult.wrong(
+                        "One of the lines of the field doesn't have 9 symbols, " +
+                            "but has " + line.length() + ".\n" +
+                            "This line is \"" + line + "\""
+                    );
+                }
+
+                for (char c : line.toCharArray()) {
+                    if (c != 'X' && c != '.' && !(c >= '0' && c <= '9')) {
+                        return CheckResult.wrong(
+                            "One of the characters is not equal to 'X' or '.' or to a number.\n" +
+                                "In this line: \"" + line + "\"."
+                        );
+                    }
+                    if (c == 'X') {
+                        mines++;
+                    }
+                }
+            }
+
+            if (attach != mines) {
+                return CheckResult.wrong(
+                    "Expected to see " + attach + " mines, found " + mines
+                );
+            }
+
+            int[] around = new int[] {-1, 0, 1};
+
+            for (int y = 0; y < lines.size(); y++) {
+                String line = lines.get(y);
+                for (int x = 0; x < line.length(); x++) {
+                    char c = line.charAt(x);
+
+                    if (c == 'X') {
+                        continue;
+                    }
+
+                    int minesAround = 0;
+
+                    for (int dx : around) {
+                        for (int dy : around) {
+
+                            int newX = x + dx;
+                            int newY = y + dy;
+
+                            if (0 <= newX && newX < 9 &&
+                                0 <= newY && newY < 9) {
+
+                                char newC = lines.get(newY).charAt(newX);
+
+                                if (newC == 'X') {
+                                    minesAround++;
+                                }
+                            }
+                        }
+                    }
+
+                    if (minesAround == 0 && c != '.') {
+                        return CheckResult.wrong(
+                            "There are no mines around, but found number " + c + ".\n" +
+                                "In line " + (y+1) + ", symbol " + (x+1) + "."
+                        );
+                    }
+
+                    if (minesAround != 0 && c != '0' + minesAround) {
+                        return CheckResult.wrong(
+                            "In this cell should be number " + minesAround + ", " +
+                                "but found symbol \"" + c + "\".\n" +
+                                "In line " + (y+1) + ", symbol " + (x+1) + "."
+                        );
+                    }
+
+                }
+            }
+
+            return CheckResult.correct();
+        }
+    }
+  learner_created: false
+- name: src/minesweeper/Mine.java
+  visible: true
+  learner_created: true
+- name: src/minesweeper/Direction.java
+  visible: true
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/77/stages/428/implement
+status: Solved
+record: 2

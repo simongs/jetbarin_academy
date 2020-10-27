@@ -1,0 +1,572 @@
+type: edu
+custom_name: stage5
+files:
+- name: src/minesweeper/Main.java
+  visible: true
+  text: "package minesweeper;\n\nimport java.util.Scanner;\n\npublic class Main {\n\
+    \tpublic final static int STAGE_SIZE = 9;\n\n    public static void main(String[]\
+    \ args) {\n\t\tScanner scanner = new Scanner(System.in);\n\t\tSystem.out.println(\"\
+    How many mines do you want on the field?\");\n\t\tint mineCount = scanner.nextInt();\n\
+    \n\t\tMineGame mineGame = new MineGame();\n\t\tmineGame.init(mineCount);\n\n\t\
+    \tmineGame.play();\n    }\n}\n"
+  learner_created: false
+- name: src/minesweeper/Mine.java
+  visible: true
+  text: "package minesweeper;\n\nimport java.util.Objects;\nimport java.util.Random;\n\
+    \npublic class Mine {\n\tprivate static final Random random = new Random();\n\n\
+    \tint x;\n\tint y;\n\n\tpublic Mine(int x, int y) {\n\t\tthis.x = x;\n\t\tthis.y\
+    \ = y;\n\t}\n\n\tpublic static Mine createNewRandomEntity() {\n\t\tint x = random.nextInt(Main.STAGE_SIZE);\n\
+    \t\tint y = random.nextInt(Main.STAGE_SIZE);\n\n\t\treturn new Mine(x, y);\n\t\
+    }\n\n\t@Override\n\tpublic boolean equals(Object o) {\n\t\tif (this == o) {\n\t\
+    \t\treturn true;\n\t\t}\n\t\tif (o == null || getClass() != o.getClass()) {\n\t\
+    \t\treturn false;\n\t\t}\n\n\t\tMine mine = (Mine) o;\n\t\treturn x == mine.x\
+    \ && y == mine.y;\n\t}\n\n\t@Override\n\tpublic int hashCode() {\n\t\treturn Objects.hash(x,\
+    \ y);\n\t}\n\n\t@Override\n\tpublic String toString() {\n\t\treturn \"Mine{\"\
+    \ + \"x=\" + x + \", y=\" + y + '}';\n\t}\n\n\tpublic boolean check(int x, int\
+    \ y) {\n\t\treturn this.x == x && this.y == y;\n\t}\n}\n"
+  learner_created: false
+- name: src/minesweeper/Direction.java
+  visible: true
+  text: "package minesweeper;\n\npublic enum Direction {\n\tNW(-1, -1),\n\tN(0, -1),\n\
+    \tNE(1, -1),\n\n\tE(1, 0),\n\tW(-1, 0),\n\n\tSW(-1, 1),\n\tS(0, 1),\n\tSE(1, 1);\n\
+    \n\tfinal int x;\n\tfinal int y;\n\tDirection(int x, int y) {\n\t\tthis.x = x;\n\
+    \t\tthis.y = y;\n\t}\n}\n"
+  learner_created: false
+- name: src/minesweeper/Cell.java
+  visible: true
+  text: "package minesweeper;\n\npublic class Cell {\n\tint x;\n\tint y;\n\tboolean\
+    \ isMine;\n\tint nearMineCount = 0;\n\tboolean isChecked;\n\n\tpublic Cell(int\
+    \ x, int y, boolean isMine) {\n\t\tthis.x = x;\n\t\tthis.y = y;\n\t\tthis.isMine\
+    \ = isMine;\n\n\t\tif (isMine) {\n\t\t\tnearMineCount = -1;\n\t\t}\n\t}\n\n\t\
+    public void updateNearCount() {\n\t\tnearMineCount += 1;\n\t}\n\n\tpublic void\
+    \ onChecked() {\n\t\tisChecked = true;\n\t}\n\n\tpublic void onUnChecked() {\n\
+    \t\tisChecked = false;\n\t}\n}\n"
+  learner_created: false
+- name: src/minesweeper/MineGame.java
+  visible: true
+  text: "package minesweeper;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\
+    import java.util.Scanner;\n\npublic class MineGame {\n\n\tpublic final static\
+    \ int STAGE_SIZE = 9;\n\n\tList<Mine> mineList = new ArrayList<>();\n\tCell[][]\
+    \ cellInfoArray = new Cell[STAGE_SIZE][STAGE_SIZE];\n\n\tint currentMarkingTotalCount\
+    \ = 0;\n\tint correctMineCount = 0;\n\tint targetMineCount = 0;\n\n\tpublic void\
+    \ init(int mineCount) {\n\t\ttargetMineCount = mineCount;\n\n\t\tmineList = createRandomMineList(mineCount);\n\
+    \n\t\tcellInfoArray = createMineStage(); // 마인세팅\n\n\t\tinjectHintMineStage(cellInfoArray);\
+    \ // add count\n\t}\n\n\tprivate void injectHintMineStage(Cell[][] cellInfoArray)\
+    \ {\n\t\tfor (int i = 0; i < STAGE_SIZE; i++) {\n\t\t\tfor (int j = 0; j < STAGE_SIZE;\
+    \ j++) {\n\t\t\t\tCell cell = cellInfoArray[i][j];\n\t\t\t\tif (cell.isMine) {\n\
+    \t\t\t\t\t// 8방향으로 숫자정보를 업데이트 해준다.\n\t\t\t\t\tfor (Direction direction : Direction.values())\
+    \ {\n\t\t\t\t\t\tupdateCellInfoArray(cellInfoArray, i - direction.x, j - direction.y);\n\
+    \t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void updateCellInfoArray(Cell[][]\
+    \ cellInfoArray, int i, int j) {\n\t\tif (i < 0 || j < 0 || i >= STAGE_SIZE ||\
+    \ j >= STAGE_SIZE) {\n\t\t\treturn;\n\t\t}\n\n\t\tCell cell = cellInfoArray[i][j];\n\
+    \t\tif (cell.isMine) {\n\t\t\treturn;\n\t\t}\n\n\t\tcell.updateNearCount();\n\t\
+    }\n\n\tprivate List<Mine> createRandomMineList(int mineCount) {\n\t\tList<Mine>\
+    \ mineList = new ArrayList<>();\n\n\t\tfor (int i = 0 ; i < mineCount ; i++) {\n\
+    \t\t\tmineList.add(getUniqueMine(mineList));\n\t\t}\n\n\t\treturn mineList;\n\t\
+    }\n\n\tprivate Mine getUniqueMine(List<Mine> mineList) {\n\t\twhile (true) {\n\
+    \t\t\tfinal Mine randomMine = Mine.createNewRandomEntity();\n\n\t\t\tlong count\
+    \ = mineList.stream().filter(i -> i.equals(randomMine)).count();\n\t\t\tif (count\
+    \ > 0) {\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\treturn randomMine;\n\t\t}\n\t}\n\
+    \n\tprivate Cell[][] createMineStage() {\n\t\tCell[][] mineStage = new Cell[STAGE_SIZE][STAGE_SIZE];\n\
+    \n\t\tfor (int i = 0; i < STAGE_SIZE; i++) {\n\t\t\tfor (int j = 0; j < STAGE_SIZE;\
+    \ j++) {\n\t\t\t\tint finalI = i;\n\t\t\t\tint finalJ = j;\n\t\t\t\tlong count\
+    \ = mineList.stream().filter(mine -> mine.check(finalI, finalJ)).count();\n\t\t\
+    \t\tif (count > 0) {\n\t\t\t\t\tmineStage[finalI][finalJ] = new Cell(i, j, true);\
+    \ // 지뢰 세팅\n\t\t\t\t} else {\n\t\t\t\t\tmineStage[finalI][finalJ] = new Cell(i,\
+    \ j, false); // 주변지뢰값 초기화\n\t\t\t\t}\n\n\t\t\t}\n\t\t}\n\n\t\treturn mineStage;\n\
+    \t}\n\n\tpublic void play() {\n\t\tScanner scanner = new Scanner(System.in);\n\
+    \n\t\twhile (true) {\n\t\t\tprintMineStage();\n\n\t\t\tif ((targetMineCount ==\
+    \ correctMineCount) && (targetMineCount == currentMarkingTotalCount)) {\n\t\t\t\
+    \tSystem.out.println(\"Congratulations! You found all mines!\");\n\t\t\t\treturn;\n\
+    \t\t\t}\n\n\t\t\tSystem.out.println(\"Set/delete mines marks (x and y coordinates):\"\
+    );\n\t\t\tString[] xy = scanner.nextLine().split(\" \");\n\n\t\t\tsolveProblem(Integer.parseInt(xy[1])\
+    \ -1, Integer.parseInt(xy[0]) -1);\n\t\t}\n\t}\n\n\tpublic void printMineStage()\
+    \ {\n\t\tSystem.out.println(\" │123456789│\");\n\t\tSystem.out.println(\"—│———\
+    ——————│\");\n\n\t\tfor (int i = 0; i < STAGE_SIZE; i++) {\n\t\t\tSystem.out.print(\
+    \ (i + 1) + \"|\");\n\t\t\tfor (int j = 0; j < STAGE_SIZE; j++) {\n\t\t\t\tCell\
+    \ cell = cellInfoArray[i][j];\n\n\t\t\t\tif (cell.isChecked) { // checked\n\t\t\
+    \t\t\tSystem.out.print(\"*\");\n\t\t\t\t} else  if (cell.isMine) {\n\t\t\t\t\t\
+    System.out.print(\".\");\n\t\t\t\t} else if (cell.nearMineCount == 0) {\n\t\t\t\
+    \t\tSystem.out.print(\".\");\n\t\t\t\t} else {\n\t\t\t\t\tSystem.out.print(cell.nearMineCount);\n\
+    \t\t\t\t}\n\t\t\t}\n\t\t\tSystem.out.println(\"|\");\n\t\t}\n\n\t\tSystem.out.println(\"\
+    —│—————————│\");\n\t}\n\n\tprivate void solveProblem(int x, int y) {\n\t\tCell\
+    \ cell = cellInfoArray[x][y];\n\n\t\tif (cell.nearMineCount > 0) {\n\t\t\tSystem.out.println(\"\
+    There is a number here!\");\n\t\t\treturn;\n\t\t}\n\n\t\tif (!cell.isChecked)\
+    \ {\n\t\t\tcell.onChecked();\n\t\t\tcurrentMarkingTotalCount += 1;\n\t\t\tif (cell.isMine)\
+    \ {\n\t\t\t\tcorrectMineCount += 1;\n\t\t\t}\n\t\t} else {\n\t\t\tcell.onUnChecked();\n\
+    \t\t\tcurrentMarkingTotalCount -= 1;\n\t\t\tif (cell.isMine) {\n\t\t\t\tcorrectMineCount\
+    \ -= 1;\n\t\t\t}\n\t\t}\n\t}\n\n\n}\n"
+  learner_created: false
+- name: test/MinesweeperTest.java
+  visible: false
+  text: |
+    import minesweeper.Main;
+    import org.hyperskill.hstest.stage.StageTest;
+    import org.hyperskill.hstest.testcase.CheckResult;
+    import org.hyperskill.hstest.testcase.TestCase;
+
+    import java.util.*;
+
+    import static java.lang.Math.abs;
+
+    class Grid {
+
+        char[][] rows;
+        Grid(String[] rows) throws Exception {
+            this.rows = new char[rows.length][];
+            for (int i = 0; i < rows.length; i++) {
+                this.rows[i] = rows[i].toCharArray();
+                for (char c : this.rows[i]) {
+                    if (c != '/'
+                        && c != 'x'
+                        && c != '.'
+                        && c != '*'
+                        && !(c >= '0' && c <= '9')) {
+                        throw new Exception(
+                            "A row of the grid should contain " +
+                                "'/', 'X', '.' or '*' or numbers. \n" +
+                                "Found: '" + c + "' in row \"" + rows[i] + "\""
+                        );
+                    }
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            String res = "";
+            for (int i = 0; i < this.rows.length; i++) {
+                res += new String(this.rows[i]) + "\n";
+            }
+            return res.trim();
+        }
+
+        int count(char c) {
+            int sum = 0;
+            for (char[] row : rows) {
+                for (char ch : row) {
+                    sum += ch == c ? 1 : 0;
+                }
+            }
+            return sum;
+        }
+
+        int countAround(int x, int y, char c) {
+            int[] around = new int[] {-1, 0, 1};
+            int count = 0;
+            for (int dx : around) {
+                for (int dy : around) {
+
+                    int newX = x + dx;
+                    int newY = y + dy;
+
+                    if (1 <= newX && newX <= 9 &&
+                        1 <= newY && newY <= 9) {
+                        if (get(newX, newY) == c) {
+                            count++;
+                        }
+                    }
+                }
+            }
+            return count;
+        }
+
+        int distanceToCenter(int x, int y) {
+            return abs(x - 5) + abs(y - 5);
+        }
+
+        void replaceAround(int x, int y, char from, char to) {
+            int[] around = new int[] {-1, 0, 1};
+            int count = 0;
+            for (int dx : around) {
+                for (int dy : around) {
+
+                    int newX = x + dx;
+                    int newY = y + dy;
+
+                    if (1 <= newX && newX <= 9 &&
+                        1 <= newY && newY <= 9) {
+                        if (get(newX, newY) == from) {
+                            set(newX, newY, to);
+                        }
+                    }
+                }
+            }
+        }
+
+        char get(int x, int y) {
+            return rows[y-1][x-1];
+        }
+
+        void set(int x, int y, char c) {
+            rows[y-1][x-1] = c;
+        }
+
+        Grid copy() {
+            String[] rows = new String[this.rows.length];
+            for (int i = 0; i < this.rows.length; i++) {
+                rows[i] = new String(this.rows[i]);
+            }
+            try {
+                return new Grid(rows);
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+
+        int differences(Grid other) {
+            int diff = 0;
+            for (int x = 1; x <= 9; x++) {
+                for (int y = 1; y <= 9; y++) {
+                    diff += get(x, y) != other.get(x, y) ? 1 : 0;
+                }
+            }
+            return diff;
+        }
+
+        void checkField(boolean withRealMines) throws Exception {
+            for (int x = 1; x <= 9; x++) {
+                for (int y = 1; y <= 9; y++) {
+                    char c = get(x, y);
+                    if (!withRealMines && c == 'x') {
+                        throw new Exception(
+                            "The word \"failed\" was not found, " +
+                                "but the last grid contains 'X' characters. " +
+                                "This should not be the case."
+                        );
+                    }
+                    if (c == '/') {
+                        int dotsAround = countAround(x, y, '.');
+                        if (dotsAround != 0) {
+                            throw new Exception(
+                                "The last grid contains '.' and '/' " +
+                                    "characters that are next to each other. " +
+                                    "This situation is impossible."
+                            );
+                        }
+                        if (withRealMines) {
+                            int minesAround = countAround(x, y, 'x');
+                            if (minesAround != 0) {
+                                throw new Exception(
+                                    "The last grid contains 'X' and '/' " +
+                                        "characters that are next to each other. " +
+                                        "This situation is impossible."
+                                );
+                            }
+                        }
+                    }
+                    if (c >= '1' && c <= '9') {
+                        int num = c - '0';
+                        int freePlacesAround =
+                            countAround(x, y, '.') +
+                                countAround(x, y, '*');
+
+                        if (withRealMines) {
+                            freePlacesAround += countAround(x, y, 'x');
+                        }
+
+                        if (num > freePlacesAround) {
+                            throw new Exception(
+                                "There is a number " + num + " in the last grid, " +
+                                    "but there are fewer free fields " +
+                                    "around which to put a mine. " +
+                                    "This situation is impossible."
+                            );
+                        }
+                    }
+                    if (c == '*') {
+                        int guaranteedEmptyAround = countAround(x, y, '/');
+                        if (guaranteedEmptyAround != 0) {
+                            throw new Exception(
+                                "The last grid contains '*' and '/' " +
+                                    "characters that are next to each other. " +
+                                    "This situation is impossible. If there is " +
+                                    "'*' character that is " +
+                                    "next to '/' it should be replaced to '/' " +
+                                    "or to a number."
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        void checkMiddleGame() throws Exception {
+            checkField(false);
+        }
+
+        void checkFail() throws Exception {
+            checkField(true);
+        }
+
+        static List<Grid> parse(String output) throws Exception {
+
+            output = output.replaceAll("│", "|");
+            output = output.replaceAll("—", "-");
+
+            List<Grid> grids = new LinkedList<>();
+            String[] lines = output.split("\n");
+
+            boolean gridStarted = false;
+            List<String> newGrid = new LinkedList<>();
+            for (String line : lines) {
+                line = line.trim();
+                if (line.contains("-|--")) {
+                    gridStarted = !gridStarted;
+                    if (gridStarted) {
+                        newGrid = new LinkedList<>();
+                    } else {
+                        if (newGrid.size() != 9) {
+                            throw new Exception(
+                                "Found grid that contains " + newGrid.size() +
+                                    " but grid should contain 9 lines. \n" +
+                                    "The tests assume that the grid is " +
+                                    "between the lines containing the line \"-│--\"."
+                            );
+                        }
+                        grids.add(
+                            new Grid(newGrid.toArray(new String[0]))
+                        );
+                    }
+                    continue;
+                }
+                if (gridStarted) {
+
+                    char toFind = '|';
+
+                    long countBrackets =
+                        line.chars().filter(c -> c == toFind).count();
+
+                    if (countBrackets != 2) {
+                        throw new Exception(
+                            "Grid should contain " +
+                                "two '|' symbols, at the beginning " +
+                                "(after row number) " +
+                                "and at the end of the row. \n" +
+                                "Your line: \"" + line + "\"."
+                        );
+                    }
+
+                    int first = line.indexOf(toFind) + 1;
+                    int second = line.indexOf(toFind, first);
+
+                    int rowSize = second - first;
+
+                    if (rowSize != 9) {
+                        throw new Exception(
+                            "Every row of the grid should contain " +
+                                "9 symbols between '|' chars. \nThis line has " +
+                                rowSize + " symbols: \"" + line + "\"."
+                        );
+                    }
+
+                    String row = line.substring(first, second);
+
+                    newGrid.add(row);
+                }
+            }
+
+            return grids;
+        }
+
+    }
+
+    class Coords {
+        int x;
+        int y;
+        Coords(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    enum FirstPressStatus {
+        NOT_PRESSED_FREE, PRESSED_FREE, VERIFIED_OK
+    }
+
+    class State {
+        int minesCount = 0;
+        FirstPressStatus isStart = FirstPressStatus.NOT_PRESSED_FREE;
+        List<Coords> marks = new ArrayList<>();
+    }
+
+    public class MinesweeperTest extends StageTest<State> {
+
+        public MinesweeperTest() {
+            super(Main.class);
+        }
+
+        @Override
+        public List<TestCase<State>> generate() {
+            List<TestCase<State>> tests = new ArrayList<>();
+
+            for (int i = 1; i < 70; i += i < 10 ? 1 : 5) {
+                for (int j = 0; j < (i < 5 ? 20 : 2); j++) {
+                    State state = new State();
+                    state.minesCount = i;
+                    tests.add(new TestCase<State>()
+                        .addInput("" + i)
+                        .addInfInput(out -> createDynamicInput(out, state))
+                        .setAttach(state)
+                    );
+                }
+            }
+            return tests;
+        }
+
+        private Object createDynamicInput(String out, State state) {
+            out = out.trim().toLowerCase();
+
+            List<Grid> grids;
+            try {
+                grids = Grid.parse(out);
+            } catch (Exception ex) {
+                return CheckResult.wrong(ex.getMessage());
+            }
+
+            if (grids.size() == 0) {
+                return CheckResult.wrong(
+                    "Cannot find a field after the last input. Make sure you output " +
+                        "this field using '|' and '-' characters."
+                );
+            }
+
+            Grid grid = grids.get(0);
+
+            state.marks.removeIf(elem -> {
+                char c = grid.get(elem.x, elem.y);
+                boolean isGuaranteedEmptyNow = c == '/';
+                boolean isNumberNow = c >= '1' && c <= '9';
+                boolean isFailed = c == 'x';
+                return isGuaranteedEmptyNow || isNumberNow || isFailed;
+            });
+
+            boolean isFailed = out.contains("failed");
+            boolean isWin = out.contains("congratulations");
+
+            int starCount = grid.count('*');
+            int shouldBeStars = state.marks.size();
+            if (starCount != shouldBeStars && !isFailed && !isWin) {
+                return CheckResult.wrong(
+                    "There should be " + shouldBeStars + " '*' " +
+                        "symbol" + (starCount > 1? "s": "") + " in the last " +
+                        "grid. Found: " + starCount
+                );
+            }
+            if (isFailed) {
+                if (state.isStart != FirstPressStatus.VERIFIED_OK) {
+                    return CheckResult.wrong(
+                        "The user should not lose after the first \"free\" move."
+                    );
+                }
+                try {
+                    grid.checkFail();
+                    int minesCount = grid.count('x');
+                    if (minesCount != state.minesCount) {
+                        return CheckResult.wrong(
+                            "There " + (minesCount > 1? "are" : "is") +
+                                " " + minesCount + " mine" + (minesCount > 1? "s": "") +
+                                " in the last grid marked 'X'. " +
+                                "But initially the user " +
+                                "entered " + state.minesCount + " mine" +
+                                (state.minesCount > 1? "s": "") +". " +
+                                "Every real mine should be marked as 'X' at the end " +
+                                "in case of failure."
+                        );
+                    }
+                    return CheckResult.correct();
+                } catch (Exception ex) {
+                    return CheckResult.wrong(ex.getMessage());
+                }
+            }
+
+            if (state.isStart == FirstPressStatus.PRESSED_FREE) {
+                state.isStart = FirstPressStatus.VERIFIED_OK;
+            }
+
+            try {
+                grid.checkMiddleGame();
+            } catch (Exception ex) {
+                return CheckResult.wrong(ex.getMessage());
+            }
+
+            if (isWin) {
+                int freeCellsCount = grid.count('.') + grid.count('*');
+                if (freeCellsCount != state.minesCount &&
+                    state.marks.size() != state.minesCount) {
+                    return CheckResult.wrong(
+                        "The word \"congratulations\" was found, " +
+                            "but not every mine was found. \n" +
+                            "Mines to find: " + state.minesCount + "\n" +
+                            "Free cells left: " + freeCellsCount
+
+                    );
+                }
+                return CheckResult.correct();
+            }
+
+            Random random = new Random();
+
+            int dotsCount = grid.count('.');
+
+            if (starCount != 0 && (random.nextInt(4) == 0 || dotsCount == 0)) {
+                int nextMine = random.nextInt(state.marks.size());
+                Coords mineToRemove = state.marks.get(nextMine);
+                state.marks.remove(mineToRemove);
+                int x = mineToRemove.x;
+                int y = mineToRemove.y;
+                return x + " " + y + " mine";
+            }
+
+            if (dotsCount == 0) {
+                return CheckResult.wrong(
+                    "There are no '.' cells in the field, " +
+                        "but the game is not over. Something is wrong."
+                );
+            }
+
+            while (true) {
+                int x = 1 + random.nextInt(9);
+                int y = 1 + random.nextInt(9);
+
+                char c = grid.get(x, y);
+                if (c == '.') {
+                    boolean isMine = random.nextInt(3) == 0;
+                    if (isMine) {
+                        state.marks.add(new Coords(x, y));
+                        return x + " " + y + " mine";
+                    } else {
+                        if (state.isStart == FirstPressStatus.NOT_PRESSED_FREE) {
+                            state.isStart = FirstPressStatus.PRESSED_FREE;
+                        }
+                        return x + " " + y + " free";
+                    }
+                }
+            }
+        }
+
+        @Override
+        public CheckResult check(String reply, State attach) {
+            reply = reply.toLowerCase();
+
+            boolean isFailed = reply.contains("failed");
+            boolean isWin = reply.contains("congratulations");
+
+            if (!isFailed && !isWin) {
+                return CheckResult.wrong(
+                    "No words " +
+                        "\"congratulations\" or \"failed\" were found. " +
+                        "The program must end in one of these ways."
+                );
+            }
+
+            return CheckResult.correct();
+        }
+    }
+  learner_created: false
+- name: src/minesweeper/Command.java
+  visible: true
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/77/stages/430/implement
+status: Solved
+record: 4
